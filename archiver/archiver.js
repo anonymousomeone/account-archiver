@@ -1,5 +1,5 @@
-const { channel } = require('diagnostics_channel')
 const { Client } = require('discord.js')
+const beautify = require('json-beautify')
 const fs = require('fs')
 
 class Archiver {
@@ -12,47 +12,69 @@ class Archiver {
             this.client = new Client
             this.client.login(token).then(() => {
                 console.log(`Archiver ready! Logged in as: ${this.client.user.tag}`)
-                resolve()
+                resolve(this.client)
             })
         })
     }
-    getMessages(channel, msgid) {
+    async getMessages(channel, msgid) {
         return new Promise(async (resolve, reject) => {
+            function sleep(ms) {
+                 return new Promise( res => setTimeout(res, ms)) 
+            }
+
             var arr = []
             async function recurse(id) {
-                var messages = []
-                channel.fetchMessages({"before": id}).then((m) => {
+                channel.fetchMessages({"before": id}).then(async (m) => {
+                    var msgs = 0;
                     for (var [k, v] of m) {
-                        messages.push(v)
+                        arr.push(v)
+                        msgs++
+                    }
+                    if (msgs != 50) {
+                        resolve(arr)
+                    } else {
+                        await sleep(200)
+                        process.stdout.write(`${arr.length} / ? Messages\r`)
+                        recurse(arr[arr.length - 1].id)
                     }
                 })
-                arr.push(messages)
-                if (messages.length != 50) {
-                    return;
-                } else {
-                    await sleep(200)
-                    recurse(messages[messages.length].id)
-                }
             }
-            await recurse(msgid)
-            resolve(arr)
+            recurse(msgid)
         })
     }
     archiveChannel(id) {
-        var channel;
-        for (var [k, v] of this.client.channels) {
-            if (k == id) {
-                channel = v
+        return new Promise((resolve, reject) => {
+            var channel;
+            for (var [k, v] of this.client.channels) {
+                if (k == id) {
+                    channel = v
+                }
             }
-        }
-        console.log(channel)
-        channel.fetchMessages().then((m) => {
-            var id = 0;
-            for (var [k, v] of m) {
-                id = v.id
-            }
-            this.getMessages(id).then((messages) => {
-                console.log(messages)
+
+            // when the circle is sus 😔
+            const replacerFunc = () => {
+                const visited = new WeakSet();
+                return (key, value) => {
+                    if (typeof value === "object" && value !== null) {
+                        if (visited.has(value)) {
+                        return;
+                        }
+                        visited.add(value);
+                    }
+                    return value;
+                };
+            };
+            
+            console.log(`Archiving "${channel.name}" (${channel.id})`)
+            channel.fetchMessages({limit: 1}).then((m) => {
+                var id = 0;
+                for (var [k, v] of m) {
+                    id = v.id
+                }
+                this.getMessages(channel, id).then((messages) => {
+                    fs.writeFileSync('./messages.json', JSON.stringify(messages, replacerFunc(), 2))
+                    resolve()
+                })
             })
         })
     }
