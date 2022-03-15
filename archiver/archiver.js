@@ -58,17 +58,29 @@ class Archiver {
                     channel = v
                 }
             }
-
             if (!channel) throw new Error('channel not found!')
-
+            
             // hehehehaw
             if (!channel.name && channel.type == 'group') channel.name = channel.recipients.entries().next().value[1].username
-
             if (!channel.name && channel.type == 'dm') channel.name = channel.recipient.username
-            
+
             console.log(`Archiving channel "${channel.name}" (${channel.id})`)
+
+            if (channel.type == 'voice' || channel.type == 'category') reject('channel not archivable!')
+
+            if (!fs.existsSync('./account/guilds') || !fs.existsSync('./account/dms')) this.createFileStructure()
+
+
+            var path = ``
+            if (channel.type == 'group' || channel.type == 'dm') {
+                path = `./account/dms/${channel.name}/`
+            } else {
+                path = `./account/guilds/${channel.guild.name}/${channel.name}/`
+            }
+
             this.getMessages(channel).then((messages) => {
-                fs.writeFileSync('./messages.json', JSON.stringify(this.parse(messages), null, 2))
+                if (!fs.existsSync(path)) fs.mkdirSync(path)
+                fs.writeFileSync(path + 'messages.json', JSON.stringify(this.parse(messages), null, 2))
                 resolve(channel)
             })
         })
@@ -77,7 +89,7 @@ class Archiver {
         // custom json structure since discord circular structure 🤢🤮
         let arr = []
         for (var i = 0 ; i < messages.length; i++) {
-            if (messages[i].embeds) {
+            if (messages[i].embeds[0]) {
                 // yeah dont overwrite i
                 for (var x = 0; x < messages[i].embeds.length; x++) {
                     // why so many circles ???
@@ -103,6 +115,11 @@ class Archiver {
             arr.push(json)
         }
         return arr
+    }
+    createFileStructure() {
+        if (!fs.existsSync('./account')) fs.mkdirSync('./account')
+        if (!fs.existsSync('./account/guilds')) fs.mkdirSync('./account/guilds')
+        if (!fs.existsSync('./account/dms')) fs.mkdirSync('./account/dms')
     }
 }
 
