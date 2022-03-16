@@ -73,38 +73,42 @@ class Archiver {
 
             var path = ``
             if (channel.type == 'group' || channel.type == 'dm') {
-                path = `./account/dms/${channel.name}/`
+                path = `./account/dms/${channel.id}/`
             } else {
-                path = `./account/guilds/${channel.guild.name}/${channel.name}/`
+                path = `./account/guilds/${channel.guild.id}/`
+                if (!fs.existsSync(path)) fs.mkdirSync(path)
+                path += `${channel.id}/`
+                if (!fs.existsSync(path)) fs.mkdirSync(path)
             }
 
+            fs.writeFileSync(path + 'channel.json', JSON.stringify(this.parseChannel(channel), null, 2))
+
             this.getMessages(channel).then((messages) => {
-                if (!fs.existsSync(path)) fs.mkdirSync(path)
-                fs.writeFileSync(path + 'messages.json', JSON.stringify(this.parse(messages), null, 2))
+                fs.writeFileSync(path + 'messages.json', JSON.stringify(this.parseMessages(messages), null, 2))
                 resolve(channel)
             })
+            console.log(this.parseGuild(channel))
         })
     }
-    parse(messages) {
+    parseMessages(messages) {
         // custom json structure since discord circular structure 🤢🤮
         let arr = []
         for (var i = 0 ; i < messages.length; i++) {
             if (messages[i].embeds[0]) {
                 // yeah dont overwrite i
                 for (var x = 0; x < messages[i].embeds.length; x++) {
-                    // why so many circles ???
-                    console.log(messages[i].embeds[x])
-                    delete messages[i].embeds[x].message
-                    delete messages[i].embeds[x].thumbnail
-                    delete messages[i].embeds[x].video.embed
-                    delete messages[i].embeds[x].provider
+                    const json = {
+                        url: messages[i].embeds[x].url
+                    }
+                    // asdf
+                    messages[i].embeds[x] = json
                 }
             }
-            const json =   {
+            // debugger
+            const json = {
                 "id": messages[i].id,
                 "type": messages[i].type,
                 "content": messages[i].content,
-                "member": messages[i].member,
                 "pinned": messages[i].pinned,
                 "embeds": messages[i].embeds,
                 "attachments": messages[i].attachments,
@@ -115,6 +119,43 @@ class Archiver {
             arr.push(json)
         }
         return arr
+    }
+    parseChannel(channel) {
+        var members = []
+        for (var [k, v] of channel.members) {
+            delete v.user.settings
+            v.user.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`
+            members.push(v.user)
+        }
+        var json = {
+            "id": channel.id,
+            "members": members,
+
+        }
+        return json
+    }
+    parseGuild(channel) {
+        var emojis = []
+        for (var [k, v] of channel.guild.emojis) {
+            const emoji = {
+                id: v.id,
+                name: v.name,
+                url: `https://cdn.discordapp.com/emojis/${v.id}.webp`,
+                animated: v.animated
+            }
+            emojis.push(emoji)
+        }
+        var members = []
+        for (var [k, v] of channel.guild.members) {
+            v.user = v.user.id
+            members.push(v)
+        }
+        const json = {
+            "members": members,
+            "emojis": emojis,
+
+        }
+        return json
     }
     createFileStructure() {
         if (!fs.existsSync('./account')) fs.mkdirSync('./account')
