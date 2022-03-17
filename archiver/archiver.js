@@ -1,22 +1,20 @@
 const { Client } = require('discord.js')
 const fs = require('fs')
-const { resolve } = require('path')
 
 class Archiver {
     constructor() {
-        this.client
+        this.client = new Client()
     }
     sleep(ms) { return new Promise( res => setTimeout(res, ms)) }
     login(token) {
         return new Promise((resolve, reject) => {
-            this.client = new Client
             this.client.login(token).then(() => {
                 console.log(`Archiver ready! Logged in as: ${this.client.user.tag}`)
                 resolve(this.client)
             })
         })
     }
-    async getMessages(channel) {
+    getMessages(channel) {
         return new Promise(async (resolve, reject) => {
             function sleep(ms) {
                  return new Promise( res => setTimeout(res, ms)) 
@@ -42,7 +40,7 @@ class Archiver {
                         process.stdout.write(`${arr.length} / ${arr.length} Messages\n`)
                         resolve(arr)
                     } else {
-                        await sleep(200)
+                        await sleep(100)
                         process.stdout.write(`${arr.length} / ? Messages\r`)
                         recurse(arr[arr.length - 1].id)
                     }
@@ -74,6 +72,7 @@ class Archiver {
             var path = ``
             if (channel.type == 'group' || channel.type == 'dm') {
                 path = `./account/dms/${channel.id}/`
+                if (!fs.existsSync(path)) fs.mkdirSync(path)
             } else {
                 path = `./account/guilds/${channel.guild.id}/`
                 if (!fs.existsSync(path)) fs.mkdirSync(path)
@@ -87,8 +86,11 @@ class Archiver {
                 fs.writeFileSync(path + 'messages.json', JSON.stringify(this.parseMessages(messages), null, 2))
                 resolve(channel)
             })
-            console.log(this.parseGuild(channel))
+            // if (!(channel.type == 'group' || channel.type == 'dm')) console.log(this.parseGuild(channel))
         })
+    }
+    archiveGuild(id) {
+
     }
     parseMessages(messages) {
         // custom json structure since discord circular structure 🤢🤮
@@ -122,15 +124,26 @@ class Archiver {
     }
     parseChannel(channel) {
         var members = []
-        for (var [k, v] of channel.members) {
-            delete v.user.settings
-            v.user.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`
-            members.push(v.user)
+        // why isnt it channel.members for both ?
+        if (channel.type == 'dm' || channel.type == 'group') {
+            for (var [k, v] of channel.recipients) {
+                delete v.settings
+                v.avatar = `https://cdn.discordapp.com/avatars/${v.id}/${v.avatar}.webp`
+                members.push(v)
+            }
+        } else {
+            for (var [k, v] of channel.members) {
+                delete v.user.settings
+                v.user.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`
+                members.push(v.user)
+            }
         }
+
         var json = {
             "id": channel.id,
+            "name": channel.name,
+            "icon": channel.icon,
             "members": members,
-
         }
         return json
     }
