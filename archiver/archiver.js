@@ -10,6 +10,7 @@ class Archiver extends Parse {
     sleep(ms) { return new Promise( res => setTimeout(res, ms)) }
     login(token) {
         return new Promise((resolve, reject) => {
+            if (!fs.existsSync('./account/guilds') || !fs.existsSync('./account/dms')) this.createFileStructure()
             this.client.login(token).then(() => {
                 console.log(`Archiver ready! Logged in as: ${this.client.user.tag}`)
                 resolve(this.client)
@@ -42,8 +43,9 @@ class Archiver extends Parse {
                         process.stdout.write(`${arr.length} / ${arr.length} Messages\n`)
                         resolve(arr)
                     } else {
-                        await sleep(100)
                         process.stdout.write(`${arr.length} / ? Messages\r`)
+                        // this is the fastest you can go, right?
+                        await sleep(100)
                         recurse(arr[arr.length - 1].id)
                     }
                 })
@@ -59,6 +61,33 @@ class Archiver extends Parse {
                 }
             }
             if (!channel) throw new Error('channel not found!')
+
+            console.log(`Archiving channel "${channel.name}" (${channel.id})`)
+
+            if (channel.type != 'text') reject('channel not archivable!')
+
+            var path = `./account/guilds/${channel.guild.id}/`
+            if (!fs.existsSync(path)) fs.mkdirSync(path)
+            path += `${channel.id}/`
+            if (!fs.existsSync(path)) fs.mkdirSync(path)
+
+            fs.writeFileSync(path + 'channel.json', JSON.stringify(this.parseChannel(channel), null, 2))
+
+            this.getMessages(channel).then((messages) => {
+                fs.writeFileSync(path + 'messages.json', JSON.stringify(this.parseMessages(messages), null, 2))
+                resolve(channel)
+            })
+        })
+    }
+    archiveDMChannel(id) {
+        return new Promise((resolve, reject) => {
+            var channel;
+            for (var [k, v] of this.client.channels) {
+                if (k == id) {
+                    channel = v
+                }
+            }
+            if (!channel) throw new Error('channel not found!')
             
             // hehehehaw
             if (!channel.name && channel.type == 'group') channel.name = channel.recipients.entries().next().value[1].username
@@ -66,43 +95,35 @@ class Archiver extends Parse {
 
             console.log(`Archiving channel "${channel.name}" (${channel.id})`)
 
-            if (channel.type == 'voice' || channel.type == 'category') reject('channel not archivable!')
+            if (channel.type != 'dm' || channel.type != 'group') reject('use archiveChannel()')
 
-            if (!fs.existsSync('./account/guilds') || !fs.existsSync('./account/dms')) this.createFileStructure()
+            console.log(channel)
 
+            var path = `./account/dms/${channel.id}/`
+            if (!fs.existsSync(path)) fs.mkdirSync(path)
 
-            var path = ``
-            if (channel.type == 'group' || channel.type == 'dm') {
-                path = `./account/dms/${channel.id}/`
-                if (!fs.existsSync(path)) fs.mkdirSync(path)
-            } else {
-                path = `./account/guilds/${channel.guild.id}/`
-                if (!fs.existsSync(path)) fs.mkdirSync(path)
-                path += `${channel.id}/`
-                if (!fs.existsSync(path)) fs.mkdirSync(path)
-            }
-
-            if (channel.type == 'dm' || channel.type == 'group') {
+            if (channel.type == 'dm') {
                 fs.writeFileSync(path + 'channel.json', JSON.stringify(this.parseDMChannel(channel), null, 2))
             } else {
-                fs.writeFileSync(path + 'channel.json', JSON.stringify(this.parseChannel(channel), null, 2))
+                fs.writeFileSync(path + 'channel.json', JSON.stringify(this.parseGroupChannel(channel), null, 2))
             }
-
             this.getMessages(channel).then((messages) => {
                 fs.writeFileSync(path + 'messages.json', JSON.stringify(this.parseMessages(messages), null, 2))
                 resolve(channel)
             })
-            if (!(channel.type == 'group' || channel.type == 'dm')) console.log(this.parseGuild(channel))
+            console.log(this.parseGuild(channel))
         })
     }
     archiveGuild(id) {
-        var guild = ''
-        for (var [k, v] of this.client.guilds) {
-            if (k == id) {
-                guild = v
+        return new Promise((resolve, reject) => {
+            var guild = ''
+            for (var [k, v] of this.client.guilds) {
+                if (k == id) {
+                    guild = v
+                }
             }
-        }
-        
+            console.log(guild)
+        })
     }
     createFileStructure() {
         if (!fs.existsSync('./account')) fs.mkdirSync('./account')
