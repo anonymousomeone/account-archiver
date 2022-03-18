@@ -46,6 +46,7 @@ class Parse {
             "name": channel.name,
             "icon": channel.icon,
             "members": members,
+            "parentID": channel.parentID,
         }
         return json
     }
@@ -64,7 +65,6 @@ class Parse {
     }
     parseGroupChannel(channel) {
         var recipients = []
-        console.log(channel.recipients)
         for (var [k, v] of channel.recipients) {
             delete v.settings
             v.avatar = `https://cdn.discordapp.com/avatars/${v.id}/${v.avatar}.webp`
