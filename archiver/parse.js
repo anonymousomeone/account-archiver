@@ -1,7 +1,4 @@
 class Parse {
-    constructor() {
-        // w
-    }
     parseMessages(messages) {
         // custom json structure since discord circular structure 🤢🤮
         let arr = []
@@ -36,9 +33,9 @@ class Parse {
         var members = []
         // why isnt it channel.members for both ?
         for (var [k, v] of channel.members) {
-            delete v.user.settings
-            v.user.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`
-            members.push(v.user)
+            v.user = v.user.id
+            v.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`
+            members.push(v)
         }
 
         var json = {
@@ -78,9 +75,9 @@ class Parse {
         }
         return json
     }
-    parseGuild(channel) {
+    parseGuild(guild) {
         var emojis = []
-        for (var [k, v] of channel.guild.emojis) {
+        for (var [k, v] of guild.emojis) {
             const emoji = {
                 id: v.id,
                 name: v.name,
@@ -90,16 +87,41 @@ class Parse {
             emojis.push(emoji)
         }
         var members = []
-        for (var [k, v] of channel.guild.members) {
-            v.user = v.user.id
-            v.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`
-            members.push(v)
+        for (var [k, v] of guild.members) {
+            const user = {
+                "avatar": v.user.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`,
+                "id": v.user.id,
+                "tag": v.user.tag,
+                "note": v.user.note,
+                "bot": v.user.bot,
+                "createdAt": v.user.createdAt,
+                "presence": v.user.presence,
+            }
+            members.push(user)
+        }
+
+        var roles = []
+        for (var [k, v] of guild.roles) {
+            var member = []
+            for (var [key, val] of v.members) {
+                delete val.user.settings
+                member.push(val.user)
+            }
+            const role = {
+                "name": v.name,
+                "id": v.id,
+                "members": member,
+                "hexColor": v.hexColor,
+            }
+            roles.push(role)
         }
         const json = {
             "members": members,
             "emojis": emojis,
-            "id": channel.guild.id,
-
+            "id": guild.id,
+            "icon": guild.icon,
+            "name": guild.name,
+            "roles": roles,
         }
         return json
     }

@@ -87,7 +87,7 @@ class Archiver extends Parse {
                     channel = v
                 }
             }
-            if (!channel) throw new Error('channel not found!')
+            if (!channel) reject('channel not found!')
             
             // hehehehaw
             if (!channel.name && channel.type == 'group') channel.name = channel.recipients.entries().next().value[1].username
@@ -116,13 +116,22 @@ class Archiver extends Parse {
     }
     archiveGuild(id) {
         return new Promise((resolve, reject) => {
-            var guild = ''
+            var guild
             for (var [k, v] of this.client.guilds) {
                 if (k == id) {
                     guild = v
                 }
             }
-            console.log(guild)
+            if (!guild) reject('guild not found!')
+
+            console.log(`Archiving guild "${guild.name}" (${guild.id})`)
+
+            var path = `./account/guilds/${guild.id}/`
+            if (!fs.existsSync(path)) fs.mkdirSync(path)
+
+            fs.writeFileSync(path + 'guild.json', JSON.stringify(this.parseGuild(guild), null, 2))
+
+            resolve(guild)
         })
     }
     createFileStructure() {
