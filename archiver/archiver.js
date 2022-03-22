@@ -32,7 +32,7 @@ class Archiver extends Parse {
                 }
                 recurse(id)
             })
-            async function recurse(id) {
+            function recurse(id) {
                 channel.fetchMessages({"before": id}).then(async (m) => {
                     var msgs = 0;
                     for (var [k, v] of m) {
@@ -89,13 +89,13 @@ class Archiver extends Parse {
             }
             if (!channel) reject('channel not found!')
             
+            if (channel.type != 'dm' && channel.type != 'group') reject('use archiveChannel()')
+
             // hehehehaw
             if (!channel.name && channel.type == 'group') channel.name = channel.recipients.entries().next().value[1].username
             if (!channel.name && channel.type == 'dm') channel.name = channel.recipient.username
 
             console.log(`Archiving channel "${channel.name}" (${channel.id})`)
-
-            if (channel.type != 'dm' || channel.type != 'group') reject('use archiveChannel()')
 
             console.log(channel)
 
@@ -111,7 +111,6 @@ class Archiver extends Parse {
                 fs.writeFileSync(path + 'messages.json', JSON.stringify(this.parseMessages(messages), null, 2))
                 resolve(channel)
             })
-            console.log(this.parseGuild(channel))
         })
     }
     archiveGuild(id) {
