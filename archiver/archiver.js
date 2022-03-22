@@ -97,8 +97,6 @@ class Archiver extends Parse {
 
             console.log(`Archiving channel "${channel.name}" (${channel.id})`)
 
-            console.log(channel)
-
             var path = `./account/dms/${channel.id}/`
             if (!fs.existsSync(path)) fs.mkdirSync(path)
 

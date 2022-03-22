@@ -33,8 +33,13 @@ class Parse {
         var members = []
         // why isnt it channel.members for both ?
         for (var [k, v] of channel.members) {
+            console.log(v)
+            
+            if (v.user == String) v.avatar = null
+            else v.avatar = v.avatarURL
+            
             v.user = v.user.id
-            v.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`
+
             members.push(v)
         }
 
