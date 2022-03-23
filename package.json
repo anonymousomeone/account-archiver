@@ -4,10 +4,8 @@
   "description": "hehehehaw",
   "main": "index.js",
   "dependencies": {
-    "discord.js": "^11.4.2",
-    "json-beautify": "^1.1.1"
+    "discord.js": "^11.4.2"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
