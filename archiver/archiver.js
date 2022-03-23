@@ -1,6 +1,7 @@
 const { Client } = require('discord.js')
 const Parse = require('./parse.js')
 const https = require('https')
+const { Worker } = require('worker_threads')
 const fs = require('fs')
 
 class Archiver extends Parse {
@@ -17,6 +18,9 @@ class Archiver extends Parse {
                 resolve(this.client)
             })
         })
+    }
+    initGui() {
+        const worker = new Worker('./archiver/server/server.js')
     }
     getMessages(channel) {
         return new Promise(async (resolve, reject) => {

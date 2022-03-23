@@ -4,7 +4,9 @@
   "description": "hehehehaw",
   "main": "index.js",
   "dependencies": {
-    "discord.js": "^11.4.2"
+    "discord.js": "^11.4.2",
+    "express": "^4.17.3",
+    "node-webkit": "^0.0.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
