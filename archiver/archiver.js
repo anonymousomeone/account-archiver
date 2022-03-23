@@ -1,5 +1,6 @@
 const { Client } = require('discord.js')
 const Parse = require('./parse.js')
+const https = require('https')
 const fs = require('fs')
 
 class Archiver extends Parse {
@@ -10,7 +11,7 @@ class Archiver extends Parse {
     sleep(ms) { return new Promise( res => setTimeout(res, ms)) }
     login(token) {
         return new Promise((resolve, reject) => {
-            if (!fs.existsSync('./account/guilds') || !fs.existsSync('./account/dms')) this.createFileStructure()
+            if (!fs.existsSync('./account/')|| !fs.existsSync('./account/guilds') || !fs.existsSync('./account/dms')) this.createFileStructure()
             this.client.login(token).then(() => {
                 console.log(`Archiver ready! Logged in as: ${this.client.user.tag}`)
                 resolve(this.client)
@@ -30,8 +31,16 @@ class Archiver extends Parse {
                     id = v.id
                     arr.push(v)
                 }
-                recurse(id)
+                // this is probably a bad way to do it
+                this.getMaxMessages('866356932293558302').then((m) => {
+                    length = JSON.parse(m.toString()).total_results
+                    recurse(id)
+                })
+            }).catch((err) => {
+                reject(err)
             })
+            var length
+    
             function recurse(id) {
                 channel.fetchMessages({"before": id}).then(async (m) => {
                     var msgs = 0;
@@ -43,11 +52,13 @@ class Archiver extends Parse {
                         process.stdout.write(`${arr.length} / ${arr.length} Messages\n`)
                         resolve(arr)
                     } else {
-                        process.stdout.write(`${arr.length} / ? Messages\r`)
+                        process.stdout.write(`${arr.length} / ${length} Messages\r`)
                         // this is the fastest you can go, right?
                         await sleep(100)
                         recurse(arr[arr.length - 1].id)
                     }
+                }).catch((err) => {
+                    reject(err)
                 })
             }
         })
@@ -62,10 +73,15 @@ class Archiver extends Parse {
             }
             if (!channel) throw new Error('channel not found!')
 
-            console.log(`Archiving channel "${channel.name}" (${channel.id})`)
-
+            // dont be stupid
+            if (!channel.permissionsFor(this.client.user.id).has(['READ_MESSAGE_HISTORY', 'VIEW_CHANNEL'])) {
+                reject("you cant read this channel's history")
+            }
             if (channel.type != 'text') reject('channel not archivable!')
 
+            console.log(`Archiving channel "${channel.name}" (${channel.id})`)
+
+            // check if directories exist
             var path = `./account/guilds/${channel.guild.id}/`
             if (!fs.existsSync(path)) fs.mkdirSync(path)
             path += `${channel.id}/`
@@ -128,13 +144,57 @@ class Archiver extends Parse {
 
             fs.writeFileSync(path + 'guild.json', JSON.stringify(this.parseGuild(guild), null, 2))
 
-            resolve(guild)
+            // are get message requests ratelimited per channel/guild/account?
+            var promises = []
+            guild.channels.forEach((channel) => {
+                if (channel.type == 'text') {
+                    if (channel.permissionsFor(this.client.user.id).has(['READ_MESSAGE_HISTORY', 'VIEW_CHANNEL'])) {
+                        promises.push(this.archiveChannel(channel.id))
+                    }
+                }
+            })
+            Promise.all(promises).then(() => {
+                resolve(guild)
+            })
         })
     }
     createFileStructure() {
         if (!fs.existsSync('./account')) fs.mkdirSync('./account')
         if (!fs.existsSync('./account/guilds')) fs.mkdirSync('./account/guilds')
         if (!fs.existsSync('./account/dms')) fs.mkdirSync('./account/dms')
+    }
+    getMaxMessages(id) {
+        return new Promise((resolve, reject) => {
+            const options = {
+                hostname: 'discord.com',
+                port: 443,
+                path: `/api/v9/channels/${id}/messages/search?max_id=999999999999999999`,
+                method: 'GET',
+                authorization: this.client.token,
+                headers: {
+                    authorization: this.client.token
+                }
+            }
+              
+            const req = https.request(options, res => {
+                // console.log(`statusCode: ${res.statusCode}`)
+                var data = ''
+                // how to check if data chunk is eof????
+                res.on('data', d => {
+                    data += d.toString()
+                    if (data[data.length - 1] == '}') {
+                        resolve(JSON.parse(JSON.stringify(data)))
+                    }
+                })
+            })
+              
+            req.on('error', error => {
+                console.error(error)
+                reject(error)
+            })
+              
+            req.end()
+        })
     }
 }
 

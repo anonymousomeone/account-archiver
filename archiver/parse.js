@@ -17,13 +17,13 @@ class Parse {
             const json = {
                 "id": messages[i].id,
                 "type": messages[i].type,
+                "authorID": messages[i].author.id,
                 "content": messages[i].content,
-                "pinned": messages[i].pinned,
-                "embeds": messages[i].embeds,
-                "attachments": messages[i].attachments,
-                "createdTimestamp": messages[i].createdTimestamp,
                 "reactions": messages[i].reactions,
-                "authorID": messages[i].author.id
+                "attachments": messages[i].attachments,
+                "embeds": messages[i].embeds,
+                "createdTimestamp": messages[i].createdTimestamp,
+                "pinned": messages[i].pinned,
             }
             arr.push(json)
         }
@@ -33,12 +33,10 @@ class Parse {
         var members = []
         // why isnt it channel.members for both ?
         for (var [k, v] of channel.members) {
-            console.log(v)
-            
             if (v.user == String) v.avatar = null
             else v.avatar = v.avatarURL
-            
-            v.user = v.user.id
+            if (!v.user) v.userid = null
+            else v.user = v.id
 
             members.push(v)
         }
@@ -58,8 +56,8 @@ class Parse {
         recipient.avatar = `https://cdn.discordapp.com/avatars/${recipient.id}/${recipient.avatar}.webp`
 
         var json = {
-            "id": channel.id,
             "name": channel.name,
+            "id": channel.id,
             "icon": channel.icon,
             "recipient": recipient,
         }
@@ -73,8 +71,8 @@ class Parse {
             recipients.push(v)
         }
         var json = {
-            "id": channel.id,
             "name": channel.name,
+            "id": channel.id,
             "icon": channel.icon,
             "recipients": recipients,
         }
@@ -94,9 +92,9 @@ class Parse {
         var members = []
         for (var [k, v] of guild.members) {
             const user = {
-                "avatar": v.user.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`,
-                "id": v.user.id,
                 "tag": v.user.tag,
+                "id": v.user.id,
+                "avatar": v.user.avatar = `https://cdn.discordapp.com/avatars/${v.user.id}/${v.user.avatar}.webp`,
                 "note": v.user.note,
                 "bot": v.user.bot,
                 "createdAt": v.user.createdAt,
@@ -121,11 +119,11 @@ class Parse {
             roles.push(role)
         }
         const json = {
-            "members": members,
-            "emojis": emojis,
+            "name": guild.name,
             "id": guild.id,
             "icon": guild.icon,
-            "name": guild.name,
+            "members": members,
+            "emojis": emojis,
             "roles": roles,
         }
         return json
