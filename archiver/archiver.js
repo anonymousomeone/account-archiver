@@ -33,7 +33,7 @@ class Archiver extends Parse {
                 }
                 // this is probably a bad way to do it
                 this.getMaxMessages('866356932293558302').then((m) => {
-                    length = JSON.parse(m.toString()).total_results
+                    length = JSON.parse(m).total_results
                     recurse(id)
                 })
             }).catch((err) => {
@@ -179,12 +179,12 @@ class Archiver extends Parse {
             const req = https.request(options, res => {
                 // console.log(`statusCode: ${res.statusCode}`)
                 var data = ''
-                // how to check if data chunk is eof????
                 res.on('data', d => {
                     data += d.toString()
-                    if (data[data.length - 1] == '}') {
-                        resolve(JSON.parse(JSON.stringify(data)))
-                    }
+
+                    var isValidJSON = true;
+                    try { JSON.parse(data) } catch { isValidJSON = false }
+                    if (isValidJSON) resolve(JSON.parse(JSON.stringify(data)))
                 })
             })
               
