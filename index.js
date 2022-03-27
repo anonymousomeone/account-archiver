@@ -11,10 +11,10 @@ archiver.login(token).then((client) => {
     //     console.log(err)                                           
     //     process.exit(1)
     // })
-    archiver.archiveGuild('825144985484787772').then((guild) => {
-        console.log('done')
-    })
-    // archiver.archiveDMChannel('866356932293558302').then(() => {
+    // archiver.archiveGuild('825144985484787772').then((guild) => {
     //     console.log('done')
     // })
+    archiver.archiveDMChannel('957457436330065920').then(() => {
+        console.log('done')
+    })
 })

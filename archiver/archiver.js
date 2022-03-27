@@ -32,7 +32,7 @@ class Archiver extends Parse {
                     arr.push(v)
                 }
                 // this is probably a bad way to do it
-                this.getMaxMessages('866356932293558302').then((m) => {
+                this.getMaxMessages(channel.id).then((m) => {
                     length = JSON.parse(m).total_results
                     recurse(id)
                 })
