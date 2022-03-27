@@ -32,7 +32,7 @@ class Archiver extends Parse {
                     arr.push(v)
                 }
                 // this is probably a bad way to do it
-                this.getMaxMessages(channel.id).then((m) => {
+                this.getMaxMessages(channel.id.toString()).then((m) => {
                     length = JSON.parse(m).total_results
                     recurse(id)
                 })
@@ -79,7 +79,7 @@ class Archiver extends Parse {
             }
             if (channel.type != 'text') reject('channel not archivable!')
 
-            console.log(`Archiving channel "${channel.name}" (${channel.id})`)
+            console.log(`Archiving channel "${channel.name}" {${channel.type}} (${channel.id})`)
 
             // check if directories exist
             var path = `./account/guilds/${channel.guild.id}/`
@@ -111,7 +111,7 @@ class Archiver extends Parse {
             if (!channel.name && channel.type == 'group') channel.name = channel.recipients.entries().next().value[1].username
             if (!channel.name && channel.type == 'dm') channel.name = channel.recipient.username
 
-            console.log(`Archiving channel "${channel.name}" (${channel.id})`)
+            console.log(`Archiving channel "${channel.name}" {${channel.type}} (${channel.id})`)
 
             var path = `./account/dms/${channel.id}/`
             if (!fs.existsSync(path)) fs.mkdirSync(path)

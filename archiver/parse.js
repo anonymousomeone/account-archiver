@@ -6,11 +6,39 @@ class Parse {
             if (messages[i].embeds[0]) {
                 // yeah dont overwrite i
                 for (var x = 0; x < messages[i].embeds.length; x++) {
-                    const json = {
-                        url: messages[i].embeds[x].url
+                    var embed = messages[i].embeds[x]
+                    var jmbed = {}
+                    if (embed.type == 'video') {
+                        jmbed = {
+                            "type": embed.type,
+                            "title": embed.title,
+                            "url": embed.url,
+                            "thumbnail": embed.thumbnail.url,
+                            "video": {
+                                "height": embed.video.height,
+                                "width": embed.video.width
+                            }
+                        }
+                    } else if (embed.type == 'gifv') {
+                        jmbed = {
+                            "type": embed.type,
+                            "url": embed.url,
+                            "video": {
+                                "height": embed.video.height,
+                                "width": embed.video.width,
+                                "url": embed.video.url
+                            }
+                        }
+                    } else if (embed.type == 'image') {
+                        jmbed = {
+                            "type": embed.type,
+                            "url": embed.url
+                        }
                     }
+                    // console.log(messages[i].embeds[x])
+
                     // asdf
-                    messages[i].embeds[x] = json
+                    messages[i].embeds[x] = jmbed
                 }
             }
             // debugger
@@ -73,7 +101,7 @@ class Parse {
         var json = {
             "name": channel.name,
             "id": channel.id,
-            "icon": channel.icon,
+            "icon": `https://cdn.discordapp.com/channel-icons/${channel.id}/${channel.icon}.webp`,
             "recipients": recipients,
         }
         return json
