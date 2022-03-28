@@ -8,35 +8,39 @@ class Parse {
                 for (var x = 0; x < messages[i].embeds.length; x++) {
                     var embed = messages[i].embeds[x]
                     var jmbed = {}
-                    if (embed.type == 'video') {
-                        jmbed = {
-                            "type": embed.type,
-                            "title": embed.title,
-                            "url": embed.url,
-                            "thumbnail": embed.thumbnail.url,
-                            "video": {
-                                "height": embed.video.height,
-                                "width": embed.video.width
+                    try {
+                        if (embed.type == 'video') {
+                            jmbed = {
+                                "type": embed.type,
+                                "title": embed.title,
+                                "url": embed.url,
+                                "thumbnail": embed.thumbnail.url,
+                                "video": {
+                                    "height": embed.video.height,
+                                    "width": embed.video.width
+                                }
+                            }
+                        } else if (embed.type == 'gifv') {
+                            jmbed = {
+                                "type": embed.type,
+                                "url": embed.url,
+                                "video": {
+                                    "height": embed.video.height,
+                                    "width": embed.video.width,
+                                    "url": embed.video.url
+                                }
+                            }
+                        } else if (embed.type == 'image') {
+                            jmbed = {
+                                "type": embed.type,
+                                "url": embed.url
                             }
                         }
-                    } else if (embed.type == 'gifv') {
-                        jmbed = {
-                            "type": embed.type,
-                            "url": embed.url,
-                            "video": {
-                                "height": embed.video.height,
-                                "width": embed.video.width,
-                                "url": embed.video.url
-                            }
-                        }
-                    } else if (embed.type == 'image') {
-                        jmbed = {
-                            "type": embed.type,
-                            "url": embed.url
-                        }
+                    } catch(err) {
+                        console.log(err)
+                        jmbed = null
                     }
                     // console.log(messages[i].embeds[x])
-
                     // asdf
                     messages[i].embeds[x] = jmbed
                 }

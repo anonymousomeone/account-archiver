@@ -4,14 +4,15 @@ const https = require('https')
 const fs = require('fs')
 
 class Archiver extends Parse {
-    constructor() {
+    constructor(options) {
         super()
         this.client = new Client()
+        this.options = options
     }
     sleep(ms) { return new Promise( res => setTimeout(res, ms)) }
     login(token) {
         return new Promise((resolve, reject) => {
-            if (!fs.existsSync('./account/')|| !fs.existsSync('./account/guilds') || !fs.existsSync('./account/dms')) this.createFileStructure()
+            if (!fs.existsSync('./account/') || !fs.existsSync('./account/guilds') || !fs.existsSync('./account/dms')) this.createFileStructure()
             this.client.login(token).then(() => {
                 console.log(`Archiver ready! Logged in as: ${this.client.user.tag}`)
                 resolve(this.client)

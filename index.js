@@ -1,7 +1,7 @@
 const Archiver = require('./archiver/archiver.js')
-const { token } = require('./config.json')
+const { token, options } = require('./config.json')
 
-const archiver = new Archiver
+const archiver = new Archiver(options)
 
 archiver.login(token).then((client) => {
     // archiver.archiveChannel("951532360065757217").then((channel) => {
